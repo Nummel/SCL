@@ -1,0 +1,303 @@
+FUNCTION_BLOCK FB_AnBr_test // GAME
+(* 
+
+Kleines Spiel. Erstellt um SCL zu lernen. (Mangels anderer Prog Übungen)
+Kann jederzeit wieder gelöscht werden.
+
+Die Outputs sind letztendlich optional, alle Daten können auch direkt aus dem DB gezogen werden.
+(Inputs wohl auch, muss ich mal noch testen)
+
+Ausgabe erfolgt bisher auf der Visu über die Ausgangsbytes.
+
+
+Es ist eine 8x8 Matrix, die über 8 Augangsbytes angesteuert werden.
+Jede Zeile 1 Byte, 1 = Schwarz, 0 = weiss.
+Macht 64 Pixel.
+    
+Kann leicht auf WORD oder noch höher aufgebort werden. (16x16 oder 32x32)
+Als Übung sollte 8x8 aber reichen.
+*)
+
+
+
+
+(*
+TITLE   = 'Version 0.0.01'
+VERSION : '0.1'
+AUTHOR  : EFFISI_AnBr
+NAME    : GAME
+*)
+
+
+// -------------------Eingänge ---------------------------
+
+VAR_INPUT 
+    inLinks : BOOL;     //nach Links
+    inRechts     : BOOL;     //nach Rechts
+    inUnten     : BOOL;   //nach Unten
+    inOben    : BOOL; // nach Unten
+    inTick      : BOOL; // Taktgeber
+    inStart : BOOL; // Start des Spiels
+    inInt1 : INT;// Integer Koord 1
+    InInt2 : INT; // Integer Koord 2
+    inTimer_out : BOOL; // Timer ist abgelaufen / Spielende
+    
+END_VAR
+
+
+
+
+// -------------- Temporäre Variablen ------------------- 
+
+VAR_TEMP
+ 
+
+temp_bool : BOOL; // Boolscher Dummy - null Funktion!!!!
+i : INT ; // Indexvariable für Schleifendurchläufe
+j : INT ; // Indexvariable für Schleifendurchläufe
+k : INT ; // indexvarialbe für Schleifendurchläufe
+l : INT ; // Indexvariable für Schleifendurchläufe 
+temp_word : WORD; // temp Word dummy  
+END_VAR   
+
+VAR
+    
+     b_Links : BOOL ;
+ b_Rechts : BOOL ;
+ b_Unten : BOOL ;
+ b_Oben  : BOOL ;
+    panel : ARRAY[0..8, 0..8] OF BOOL;
+     Tack : BOOL; // TaktgeberFlanke
+     i_Punkte : INT; // Punktezählung
+     b_Treffer : BOOL; // Treffer hat statgefunden
+     i_akt : INT; // aktuelle i- Koordinate
+     j_akt : INT; // aktuelle j- Koordinate
+     i_ziel : INT ; // i variable des Ziels
+     j_ziel : int ; // j variable des Ziels
+     ruecksetz_i : BOOL;
+     ruecksetz_j : BOOL;
+     CurrTime : S5TIME;
+     biVal : WORD ; // Zeitwert
+     actFlag : BOOL ; // Q Flag vom Timer
+     TIMER_Reset : BOOL; // reset vom Timer
+     i_l_Punkte : INT; // letzter Punktestand
+     i_h_Punkte : INT; // höchster Punktestand
+     
+     
+     
+    END_VAR
+
+// -------------Ausgänge ---------------------------------
+
+VAR_OUTPUT 
+     out_Z1 : BYTE;
+ arr_out_Z1 AT out_Z1 : ARRAY [0..7] OF BOOL ;
+    
+  out_Z2 : BYTE;
+ arr_out_Z2 AT out_Z2 : ARRAY [0..7] OF BOOL ;   
+    
+  out_Z3 : BYTE;
+ arr_out_Z3 AT out_Z3 : ARRAY [0..7] OF BOOL ;   
+    
+ out_Z4 : BYTE;
+ arr_out_Z4 AT out_Z4 : ARRAY [0..7] OF BOOL ;
+
+ out_Z5 : BYTE;
+ arr_out_Z5 AT out_Z5 : ARRAY [0..7] OF BOOL ;
+ 
+  out_Z6 : BYTE;
+ arr_out_Z6 AT out_Z6 : ARRAY [0..7] OF BOOL ;
+ 
+  out_Z7 : BYTE;
+ arr_out_Z7 AT out_Z7 : ARRAY [0..7] OF BOOL ;
+ 
+  out_Z8 : BYTE;
+ arr_out_Z8 AT out_Z8 : ARRAY [0..7] OF BOOL ;
+ 
+ out_timer_reset : BOOL; // reset des Timers
+ 
+END_VAR
+
+
+
+//------------------ Beginn des Logischen Teils----------------------------
+
+// ----- Hier werden aus den Eingangssignalen die dauerhaften Steuersignale gebildet-------------------
+
+IF inLinks = TRUE THEN
+    b_Links := TRUE;
+    b_Rechts := FALSE;
+    b_Unten := FALSE;
+    b_Oben := FALSE;
+   END_IF  ;
+IF inRechts = TRUE THEN    
+    b_Links := FALSE;
+    b_Rechts := TRUE;
+    b_Unten := FALSE;
+    b_Oben := FALSE;
+  END_IF   ;
+IF inUnten = TRUE THEN    
+     b_Links := FALSE;
+     b_Rechts := FALSE;
+     b_Unten := TRUE;
+     b_Oben := FALSE;
+  END_IF ;
+  
+   IF inOben = TRUE THEN    
+     b_Links := FALSE;
+     b_Rechts := FALSE;
+     b_Unten := FALSE;
+     b_Oben := TRUE;
+
+   
+END_IF;
+
+// -------------- Timer rücksetzen ? --------------
+
+ IF TIMER_Reset = TRUE THEN
+   i_l_Punkte := i_Punkte;
+   
+   IF i_l_Punkte > i_h_Punkte THEN
+    i_h_Punkte := i_l_Punkte;
+    END_IF;
+    
+    
+    TIMER_Reset := FALSE;
+    END_IF;
+    
+// -----------  Initialisierung des Feldes nach Startsignal --------------
+
+   
+    IF inStart = TRUE OR inTimer_out = TRUE THEN
+      
+  i_akt := 4;
+  j_akt := 4;
+ i_ziel := inInt1;
+    j_ziel := inInt2;
+    i_Punkte := 0; 
+    inStart := FALSE;
+     b_Links := FALSE;
+     b_Rechts := FALSE;
+     b_Unten := FALSE;
+     b_Oben := FALSE;
+     inStart := FALSE;
+  TIMER_Reset := TRUE;
+  
+  END_IF;
+
+     inStart := FALSE;
+
+    
+ // ----------------------Bewegung mit Tick -------------------
+ 
+
+    
+ 
+ 
+ // ----------------------nach Rechts ------------------
+ 
+ IF (inTick <> Tack) AND b_Rechts = TRUE THEN
+      IF (i_akt < 7) THEN   
+    i_akt := i_akt + 1;
+     END_IF;  
+     
+  END_IF;
+
+
+
+ // ---------------------- nach Links ------------------
+ 
+IF (inTick <> Tack) AND b_Links = TRUE THEN
+ 
+ IF (i_akt > 0)  THEN
+   i_akt := i_akt - 1;
+    END_IF;   
+ 
+END_IF;
+
+// -------------------- nach Oben ---------------
+
+ IF (inTick <> Tack) AND b_Oben = TRUE THEN
+   IF (j_akt > 0)  THEN
+        j_akt := j_akt - 1;  
+END_IF; 
+END_IF;   
+
+
+    // -------------------- nach Unten ---------------
+    
+    
+     IF (inTick <> Tack) AND b_Unten = TRUE THEN
+      IF (j_akt < 7) THEN 
+ j_akt := j_akt + 1;
+END_IF;
+ END_IF; 
+  
+  
+  
+  // ------------------- Kollisionsabfrage ------------------
+  
+  
+  IF i_akt = i_ziel AND j_akt = j_ziel THEN
+  
+    b_Treffer := TRUE;
+   TIMER_Reset := TRUE;
+END_IF;
+
+
+// --------------------- Timer rücksetzen ----------------------
+
+
+
+
+ // ----------- Bildung der Zielkoordinaten nach Treffer u. Punktezählung -------------------
+ 
+ 
+IF b_Treffer = TRUE THEN
+    i_ziel := inInt1;
+    j_ziel := inInt2;
+    i_Punkte := i_Punkte + 1;
+  
+    b_Treffer := FALSE;
+   
+    
+END_IF;
+
+
+      
+// -------------------- Bildberechnung ----------------------
+
+
+   FOR i := 0 TO 7 BY 1 DO
+      FOR j :=0 TO 7 BY 1 DO
+        panel[j,i] := FALSE;
+    END_FOR;
+END_FOR;
+panel[i_akt,j_akt] := TRUE;
+panel[i_ziel,j_ziel] := TRUE;
+
+
+
+ // ---------------- Umladen der Indizes auf die Ausgangsbytes ---------------------
+ 
+    
+  FOR i := 0 TO 7 BY 1 DO
+    
+arr_out_Z1[i] := panel[i,0]  ;    
+arr_out_Z2[i] := panel[i,1]  ;    
+arr_out_Z3[i] := panel[i,2]  ;    
+arr_out_Z4[i] := panel[i,3]  ;
+arr_out_Z5[i] := panel[i,4]  ;
+arr_out_Z6[i] := panel[i,5]  ;
+arr_out_Z7[i] := panel[i,6]  ;
+arr_out_Z8[i] := panel[i,7]  ;
+
+END_FOR;
+
+// ---------- Flankengeber aus ----------------
+
+Tack := inTick;
+
+END_FUNCTION_BLOCK
+
+
