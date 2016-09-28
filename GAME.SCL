@@ -2,7 +2,6 @@ FUNCTION_BLOCK FB_AnBr_test // GAME
 (* 
 
 Kleines Spiel. Erstellt um SCL zu lernen. (Mangels anderer Prog Übungen)
-Kann jederzeit wieder gelöscht werden.
 
 Die Outputs sind letztendlich optional, alle Daten können auch direkt aus dem DB gezogen werden.
 (Inputs wohl auch, muss ich mal noch testen)
@@ -24,7 +23,7 @@ Als Übung sollte 8x8 aber reichen.
 (*
 TITLE   = 'Version 0.0.01'
 VERSION : '0.1'
-AUTHOR  : EFFISI_AnBr
+AUTHOR  : AnBr
 NAME    : GAME
 *)
 
